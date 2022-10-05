@@ -13,6 +13,10 @@
     'use strict';
     var $marker = $("div.next")
 
+    function cleanupBanMessages() {
+        $("p:contains(If you want to appeal your ban)").parents(".mail").remove()
+    }
+
     function handleSuccess(data, status, xhr) {
         console.log("Get Success")
         var $data = $(data)
@@ -29,10 +33,13 @@
                 console.log("Existing Data id", dataid)
             }
         })
+
         //$data.remove("div.more a:first-child")
         //console.log($("div.more", $data))
         var $newnext = $("div.next a:contains(More)", $data)
         $marker.html("").append($newnext)
+
+        setTimeout(cleanupBanMessages, 100)
     }
 
     function handleError(xhr, status, error) {
@@ -57,10 +64,13 @@
             request['success'] = handleSuccess
             request['error'] = handleError
             $.get(request)
+        } else {
+            console.log("Not intersecting")
         }
     }, { threshold: [0] });
 
     if ($marker.length > 0) {
         observer.observe($marker[0]);
     }
+    cleanupBanMessages()
 })();

@@ -1,9 +1,10 @@
 // ==UserScript==
 // @name         Win-Mod-Enhancements
 // @namespace    http://tampermonkey.net/
-// @version      0.2
+// @version      0.3
 // @description  Infinite scroll in the modmail. Keep 'em results coming
 // @author       Bubble_Bursts
+// @exclude      https://*.win/modmail/thread/*
 // @match        https://*.win/modmail*
 // @icon         data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
 // @grant        none

@@ -1,19 +1,57 @@
 // ==UserScript==
 // @name         Win-Enhancements
 // @namespace    http://tampermonkey.net/
-// @version      0.5
+// @version      0.6
 // @description  Infinite scroll in the search page. Keep 'em results coming
 // @author       Bubble_Bursts
 // @match        https://*.win/search*
 // @match        https://*.win/u/*
+// @match        https://*.win/logs*
+// @match        https://*.win/p/*
+// @match        https://*.win/submit*
 // @icon         data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
-// @grant        none
 // ==/UserScript==
 
 (function() {
     'use strict';
     var thisurl = new URL(window.location.href)
+    var page = thisurl.pathname.split('/')[1]
 
+    // For /logs page
+    var logs_modnames = {}
+    var $logs_modsel
+
+    console.log("Page", page)
+
+    function execute_filter() {
+        console.log('exec filter')
+        setTimeout(filter_fn, 200)
+    }
+
+    if (page == 'submitxxx') {
+        function handleLink(data, status, xhr) {
+            var title = $(data).attr('title')
+            console.log("Title", title)
+        }
+
+        /* Link auto title */
+        $("input#link").change(function() {
+            var linkurl = $(this).val()
+
+            if (!linkurl) {
+                return
+            }
+
+            var request = {url: linkurl}
+            request['success'] = handleLink
+
+            console.log("Loading", linkurl)
+            GM.xmlHttpRequest(request)
+//            $.get(request)
+        })
+    }
+
+    /* River of posts */
     // Pathname == '/search'
     var marker_tag = "div.more"
     var newnext_tag = "div.more a:contains(Next)"
@@ -24,7 +62,13 @@
     var get_inserter_fn = function($this) {
         return $this.parent()
     }
-    if (thisurl.pathname.substring(0,2) == '/u') {
+    var filter_fn = function() {
+        // do nothing
+    }
+    var init_page = function() {
+    }
+
+    if (page == 'u') {
         var urltype = thisurl.searchParams.get("type")
 
         if (urltype == "post") {
@@ -37,6 +81,49 @@
         }
         get_inserter_fn = function($this) {
             return $this
+        }
+    } else if (page == 'logs') {
+        $logs_modsel = $("<select><option name='all'>All</option></select>")
+        $logs_modsel.on('change', execute_filter)
+
+        $(".main-content").prepend($logs_modsel)
+
+        entity_tag = ".log-list .log"
+
+        get_dataid_fn = function($this) {
+            // No data id for logs, duplicate entries might show up
+            return "no-data-id"
+        }
+        get_inserter_fn = function($this) {
+            var mod = $($this.find("b span")).html()
+            if (mod) {
+                $this.attr("modname", mod)
+                logs_modnames[mod] = mod
+                var $found = $logs_modsel.find(`option[name="${mod}"]`)
+                if (!$found.length) {
+                    $logs_modsel.append($(`<option name="${mod}">${mod}</option>`))
+                }
+            }
+            return $this
+        }
+
+        filter_fn = function() {
+            var $posts = $(entity_tag)
+            var selmod = $logs_modsel.val()
+            if (selmod == "All") {
+                return
+            }
+
+            console.log(selmod)
+            $posts.show()
+            $(`.log-list .log[modname!=${selmod}]`).hide()
+        }
+
+        init_page = function() {
+            var $posts = $(entity_tag)
+            $posts.each(function() {
+                get_inserter_fn($(this))
+            })
         }
     }
 
@@ -51,9 +138,12 @@
             var dataid = get_dataid_fn($this)
             var $found = $(`[data-id="${dataid}"]`)
             if ($found.length == 0) {
-                $marker.before(get_inserter_fn($this))
+                var $new = get_inserter_fn($this)
+                $marker.before($new)
             }
         })
+
+        execute_filter()
         //$data.remove("div.more a:first-child")
         //console.log($("div.more", $data))
         var $newnext = $(newnext_tag, $data)
@@ -81,10 +171,14 @@
             request['success'] = handleSuccess
             request['error'] = handleError
             $.get(request)
+        } else {
+            console.log("Not intersecting")
         }
     }, { threshold: [0] });
 
     if ($marker.length > 0) {
         observer.observe($marker[0]);
     }
+
+    init_page()
 })();

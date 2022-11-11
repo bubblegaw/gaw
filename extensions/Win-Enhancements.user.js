@@ -16,7 +16,8 @@
     'use strict';
     var thisurl = new URL(window.location.href)
     var page = thisurl.pathname.split('/')[1]
-
+	const AUTOSCROLL_DELAY = 3000
+	
     // For /logs page
     var logs_modnames = {}
     var $logs_modsel

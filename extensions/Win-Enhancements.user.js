@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Win-Enhancements
 // @namespace    http://tampermonkey.net/
-// @version      0.6
+// @version      0.7
 // @description  Infinite scroll in the search page. Keep 'em results coming
 // @author       Bubble_Bursts
 // @match        https://*.win/search*
@@ -26,29 +26,6 @@
     function execute_filter() {
         console.log('exec filter')
         setTimeout(filter_fn, 200)
-    }
-
-    if (page == 'submitxxx') {
-        function handleLink(data, status, xhr) {
-            var title = $(data).attr('title')
-            console.log("Title", title)
-        }
-
-        /* Link auto title */
-        $("input#link").change(function() {
-            var linkurl = $(this).val()
-
-            if (!linkurl) {
-                return
-            }
-
-            var request = {url: linkurl}
-            request['success'] = handleLink
-
-            console.log("Loading", linkurl)
-            GM.xmlHttpRequest(request)
-//            $.get(request)
-        })
     }
 
     /* River of posts */
@@ -86,6 +63,24 @@
         $logs_modsel = $("<select><option name='all'>All</option></select>")
         $logs_modsel.on('change', execute_filter)
 
+		// Auto load button
+        var intervalId = 0
+        var $autoload = $("<button>Auto Load</button>")
+        $autoload.on('click', function() {
+            if (intervalId) {
+                clearInterval(intervalId)
+                intervalId = 0
+                $autoload.html("Auto Load")
+            } else {
+                $(document).scrollTop($(document).height());
+                intervalId = setInterval(function() {
+                    $(document).scrollTop($(document).height());
+                }, AUTOSCROLL_DELAY)
+                $autoload.html("Cancel Auto Load")
+            }
+        })
+
+        $(".main-content").prepend($autoload)
         $(".main-content").prepend($logs_modsel)
 
         entity_tag = ".log-list .log"

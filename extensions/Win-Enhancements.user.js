@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Win-Enhancements
 // @namespace    http://tampermonkey.net/
-// @version      0.7
+// @version      0.71
 // @description  Infinite scroll in the search page. Keep 'em results coming
 // @author       Bubble_Bursts
 // @match        https://*.win/search*

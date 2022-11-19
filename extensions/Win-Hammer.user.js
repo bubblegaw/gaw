@@ -1,12 +1,21 @@
 // ==UserScript==
 // @name         Win-Hammer
 // @namespace    http://tampermonkey.net/
-// @version      0.4
+// @version      0.5
 // @description  Mod's buddy in helping bring the hammer down on new-shills.
 // @author       Bubble_Bursts
 // @match        https://*.win/users*
 // @icon         data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
 // ==/UserScript==
+
+const hammer_styles = `
+<style>
+   .hammer-controls {
+       font-size: 75%
+   }
+   .hide-banned .banned {display: none; }
+</style>
+`
 
 const template1 = `
 <div class="post" data-type="comment" data-id="12345678" data-author="%USER%">
@@ -17,7 +26,7 @@ const template1 = `
 <a data-action="ban" title="ban user" href="javascript:void(0);"><svg class="svg-inline--fa fa-gavel fa-w-16" aria-hidden="true" focusable="false" data-prefix="fa" data-icon="gavel" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" data-fa-i2svg=""><path fill="currentColor" d="M504.971 199.362l-22.627-22.627c-9.373-9.373-24.569-9.373-33.941 0l-5.657 5.657L329.608 69.255l5.657-5.657c9.373-9.373 9.373-24.569 0-33.941L312.638 7.029c-9.373-9.373-24.569-9.373-33.941 0L154.246 131.48c-9.373 9.373-9.373 24.569 0 33.941l22.627 22.627c9.373 9.373 24.569 9.373 33.941 0l5.657-5.657 39.598 39.598-81.04 81.04-5.657-5.657c-12.497-12.497-32.758-12.497-45.255 0L9.373 412.118c-12.497 12.497-12.497 32.758 0 45.255l45.255 45.255c12.497 12.497 32.758 12.497 45.255 0l114.745-114.745c12.497-12.497 12.497-32.758 0-45.255l-5.657-5.657 81.04-81.04 39.598 39.598-5.657 5.657c-9.373 9.373-9.373 24.569 0 33.941l22.627 22.627c9.373 9.373 24.569 9.373 33.941 0l124.451-124.451c9.372-9.372 9.372-24.568 0-33.941z"></path></svg><!-- <i class="fa fa-gavel"></i> --></a>
 <a data-action="notes" title="user notes" href="javascript:void(0);"><svg class="svg-inline--fa fa-clipboard fa-w-12" aria-hidden="true" focusable="false" data-prefix="fa" data-icon="clipboard" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" data-fa-i2svg=""><path fill="currentColor" d="M384 112v352c0 26.51-21.49 48-48 48H48c-26.51 0-48-21.49-48-48V112c0-26.51 21.49-48 48-48h80c0-35.29 28.71-64 64-64s64 28.71 64 64h80c26.51 0 48 21.49 48 48zM192 40c-13.255 0-24 10.745-24 24s10.745 24 24 24 24-10.745 24-24-10.745-24-24-24m96 114v-20a6 6 0 0 0-6-6H102a6 6 0 0 0-6 6v20a6 6 0 0 0 6 6h180a6 6 0 0 0 6-6z"></path></svg><!-- <i class="fa fa-clipboard"></i> --></a>
 <a data-action="message" title="mod message" href="javascript:void(0);"><svg class="svg-inline--fa fa-reply fa-w-16" aria-hidden="true" focusable="false" data-prefix="fa" data-icon="reply" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" data-fa-i2svg=""><path fill="currentColor" d="M8.309 189.836L184.313 37.851C199.719 24.546 224 35.347 224 56.015v80.053c160.629 1.839 288 34.032 288 186.258 0 61.441-39.581 122.309-83.333 154.132-13.653 9.931-33.111-2.533-28.077-18.631 45.344-145.012-21.507-183.51-176.59-185.742V360c0 20.7-24.3 31.453-39.687 18.164l-176.004-152c-11.071-9.562-11.086-26.753 0-36.328z"></path></svg><!-- <i class="fa fa-reply"></i> --></a>
-</div>
+</div><br/>
 </div>
 `
 
@@ -35,7 +44,7 @@ const display_template = `
 </div>
 `
 
-const status_template = `<div id="hamb_status" title="HammerFren ready" style="float:left; height: 40px; width: 20px; background: green">&nbsp;</div> |
+const status_template = `<div class="hammer-controls"><div id="hamb_status" title="HammerFren ready" style="float:left; height: 40px; width: 20px; background: green">&nbsp;</div> |
 Ban message:
 <select name="hamb_banmsgs">
 <option value="You are now permanently banned">You are now permanently banned</option>
@@ -46,6 +55,10 @@ Ban message:
 <input type=checkbox id="hamb_ipban" name="hamb_ipban"  value="on">IP Ban</input>
 <a id="hamb_turboban" class="link" href="#" style="color:red">Turbo Ban</a> |
 <span class="hamb_banned" style="cursor:pointer;color:blue">Hide banned</span>
+<br/>
+<input type=checkbox id="hamb_all" name="hamb_all" value="off">All users</input>
+
+</div>
 `
 const cookie_interval = "hamb_interval"
 const cookie_banmsg = "hamb_banmsg_"
@@ -326,7 +339,7 @@ function ToggleShowBanned() {
 }
 
 function add_styles() {
-    $('<style>.hide-banned .banned {display: none; }</style>').appendTo('head')
+    $(hammer_styles).appendTo('head')
 }
 
 function init_load_save() {
@@ -429,7 +442,9 @@ function main(){
     $("a#hamb_turboban").on('click', TurboBan)
     $(".hamb_banned").on('click', ToggleShowBanned)
     $status = $("div#hamb_status")
-
+    $("#hamb_all").change(function() {
+        $(".log input[type=checkbox]").prop('checked', this.checked)
+    })
     var $bansel = $banmsg_select = $("select[name=hamb_banmsgs]")
     loadBanMessages($bansel)
 

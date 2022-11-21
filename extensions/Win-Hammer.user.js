@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Win-Hammer
 // @namespace    http://tampermonkey.net/
-// @version      0.5
+// @version      0.6
 // @description  Mod's buddy in helping bring the hammer down on new-shills.
 // @author       Bubble_Bursts
 // @match        https://*.win/users*
@@ -13,7 +13,10 @@ const hammer_styles = `
    .hammer-controls {
        font-size: 75%
    }
-   .hide-banned .banned {display: none; }
+   .hide-banned .banned,
+   .hamb-hidden {
+       display: none; 
+   }
 </style>
 `
 
@@ -57,6 +60,7 @@ Ban message:
 <span class="hamb_banned" style="cursor:pointer;color:blue">Hide banned</span>
 <br/>
 <input type=checkbox id="hamb_all" name="hamb_all" value="off">All users</input>
+<span class="hamb_clearall" style="cursor:pointer;color:blue">Clear all</span>
 
 </div>
 `
@@ -441,6 +445,10 @@ function main(){
     $("header.header").after($status_controls)
     $("a#hamb_turboban").on('click', TurboBan)
     $(".hamb_banned").on('click', ToggleShowBanned)
+	$(".hamb_clearall").click(function() {
+		$(".log").addClass("hamb-hidden")
+		$(".hamb-hidden input[type=checkbox]#banlist").remove()
+	})
     $status = $("div#hamb_status")
     $("#hamb_all").change(function() {
         $(".log input[type=checkbox]").prop('checked', this.checked)

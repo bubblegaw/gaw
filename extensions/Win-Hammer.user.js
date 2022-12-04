@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Win-Hammer
 // @namespace    http://tampermonkey.net/
-// @version      0.6
+// @version      0.7
 // @description  Mod's buddy in helping bring the hammer down on new-shills.
 // @author       Bubble_Bursts
 // @match        https://*.win/users*
@@ -15,7 +15,10 @@ const hammer_styles = `
    }
    .hide-banned .banned,
    .hamb-hidden {
-       display: none; 
+       display: none;
+   }
+   .hamb-filtered {
+       display: none;
    }
 </style>
 `
@@ -60,7 +63,8 @@ Ban message:
 <span class="hamb_banned" style="cursor:pointer;color:blue">Hide banned</span>
 <br/>
 <input type=checkbox id="hamb_all" name="hamb_all" value="off">All users</input>
-<span class="hamb_clearall" style="cursor:pointer;color:blue">Clear all</span>
+| <span class="hamb_clearall" style="cursor:pointer;color:blue">Clear all</span> |
+Filter <input id="hamb_filter" name="hamb_filter" value=""></input>
 
 </div>
 `
@@ -80,6 +84,7 @@ var $select_interval = null
 var $status = null
 var timer = null
 var $banmsg_select = null
+var filterText = ""
 
 function ReadCookie(cookie_name, as_integer) {
     var allcookies = document.cookie;
@@ -233,7 +238,14 @@ function modifyLog(data, verbose, callback) {
             console.log("ML", user,ip)
         }
         var $html = $(template1.replace(/%USER%/g, user))
-        $this.html($html).attr('name', user).attr('ip', ip)
+        $this.html($html).attr('name', user).attr('ip', ip).click(function(e) {
+            if (e.target.tagName.toLowerCase() != "input") {
+                //console.log("Gonna click, tag", e.target.tagName)
+                var $check =$(this).find("input[type=checkbox]")
+                console.log($check[0], $check[0].checked)
+                $check[0].checked = !$check[0].checked
+            }
+        })
         //console.log("ip", ip, "html", $this[0].outerHTML)
     }
 }
@@ -434,6 +446,25 @@ function download_save_file(name, contents, mime_type) {
     dlink.remove();
 }
 
+function updateTextFilter() {
+    $(".hamb-filtered").removeClass("hamb-filtered")
+    if (!filterText) {
+        return
+    }
+
+    $(".log").each(function() {
+        var $this = $(this)
+        if ($this.find("a.user-profile").text().toLowerCase().indexOf(filterText.toLowerCase()) < 0) {
+            $this.addClass("hamb-filtered")
+        }
+    })
+}
+
+function setFilterText(text) {
+    filterText = text
+    updateTextFilter()
+}
+
 function main(){
     init_load_save()
     $main = $(".main-content")
@@ -445,10 +476,14 @@ function main(){
     $("header.header").after($status_controls)
     $("a#hamb_turboban").on('click', TurboBan)
     $(".hamb_banned").on('click', ToggleShowBanned)
-	$(".hamb_clearall").click(function() {
+    $(".hamb_clearall").click(function() {
 		$(".log").addClass("hamb-hidden")
-		$(".hamb-hidden input[type=checkbox]#banlist").remove()
+        $(".hamb-hidden input[type=checkbox]#banlist").remove()
 	})
+    $("#hamb_filter").change(function() {
+        setFilterText(this.value)
+    })
+
     $status = $("div#hamb_status")
     $("#hamb_all").change(function() {
         $(".log input[type=checkbox]").prop('checked', this.checked)
